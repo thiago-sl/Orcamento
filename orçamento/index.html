@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gerador PDF Orçamento e Recibo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    background: #f0f2f5;
+  }
+  h1 {
+    text-align: center;
+    color: #004080;
+  }
+  form {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #004080;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 7px;
+    margin-top: 5px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  textarea {
+    resize: vertical;
+  }
+  button {
+    margin-top: 20px;
+    background-color: #004080;
+    border: none;
+    color: white;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #003060;
+  }
+  .hidden {
+    display: none;
+  }
+  .logo-preview {
+    margin-top: 10px;
+    max-width: 150px;
+    border-radius: 6px;
+  }
+  #btns {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  #btns button {
+    width: 150px;
+    margin: 0 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Elite Car Orçamento e Recibo</h1>
+
+<div id="btns">
+  <button id="btnOrcamento">Orçamento</button>
+  <button id="btnRecibo">Recibo</button>
+</div>
+
+<form id="formEmpresa">
+  <h2>Dados da Empresa</h2>
+  <label for="empresaNome">Nome da Empresa</label>
+  <input type="text" id="empresaNome" placeholder="Ex: Oficina XYZ" value="Elite Car"/>
+  
+  <label for="empresaEndereco">Endereço</label>
+  <input type="text" id="empresaEndereco" placeholder="Rua, Número, Bairro, Cidade" value="Qr3 cojunto N Casa 6 Buritizinho Sobradinho 2" />
+  
+  <label for="empresaTelefone">Telefone</label>
+  <input type="text" id="empresaTelefone" placeholder="(XX) XXXX-XXXX" value="(61)9813-7286" />
+  
+  <label for="empresaCNPJ">CNPJ</label>
+  <input type="text" id="empresaCNPJ" placeholder="00.000.000/0001-00" required />
+  
+  <label for="empresaLogo">Logo da Empresa (PNG/JPG)</label>
+  <input type="file" id="empresaLogo" accept="image/png, image/jpeg" />
+  <img id="logoPreview" class="logo-preview hidden" alt="Prévia do Logo" />
+</form>
+
+<form id="formOrcamento" class="hidden">
+  <h2>Orçamento</h2>
+
+  <label for="clienteNome">Nome do Cliente</label>
+  <input type="text" id="clienteNome" required />
+
+  <label for="clienteTelefone">Telefone do Cliente</label>
+  <input type="text" id="clienteTelefone" required />
+
+  <label for="veiculoModelo">Modelo do Veículo</label>
+  <input type="text" id="veiculoModelo" required />
+
+  <label for="veiculoCor">Cor do Veículo</label>
+  <input type="text" id="veiculoCor" required />
+
+  <label for="veiculoPlaca">Placa</label>
+  <input type="text" id="veiculoPlaca" required />
+
+  <label for="veiculoKM">KM Rodados</label>
+  <input type="number" id="veiculoKM" min="0" required />
+
+  <label for="observacaoOrcamento">Observação</label>
+  <textarea id="observacaoOrcamento"></textarea>
+
+  <label>Itens (item, quantidade, preço unitário)</label>
+  <div id="itensContainer"></div>
+  <button type="button" id="addItem">Adicionar Item</button>
+
+  <button type="submit">Gerar Orçamento</button>
+</form>
+
+<form id="formRecibo" class="hidden">
+  <h2>Recibo</h2>
+
+  <label for="reciboClienteNome">Nome do Cliente</label>
+  <input type="text" id="reciboClienteNome" required />
+
+  <label for="reciboClienteTelefone">Telefone do Cliente</label>
+  <input type="text" id="reciboClienteTelefone" required />
+
+  <label for="reciboValorTotal">Valor Total (R$)</label>
+  <input type="number" id="reciboValorTotal" step="0.01" min="0" required />
+
+  <label for="reciboValorEntrada">Valor de Entrada (R$)</label>
+  <input type="number" id="reciboValorEntrada" step="0.01" min="0" required />
+
+  <label for="reciboValorRestante">Valor Restante (R$)</label>
+  <input type="number" id="reciboValorRestante" step="0.01" min="0" readonly />
+
+  <label for="formaPagamento">Forma de Pagamento</label>
+  <select id="formaPagamento" required>
+    <option value="">Selecione</option>
+    <option value="Dinheiro">Dinheiro</option>
+    <option value="Débito">Débito</option>
+    <option value="Crédito">Crédito</option>
+    <option value="Pix">Pix</option>
+  </select>
+
+  <label for="observacaoRecibo">Observação</label>
+  <textarea id="observacaoRecibo"></textarea>
+
+  <button type="submit">Gerar Recibo</button>
+</form>
+
+<script>
+  // Botões mostrar formulários
+  const btnOrcamento = document.getElementById('btnOrcamento');
+  const btnRecibo = document.getElementById('btnRecibo');
+  const formOrcamento = document.getElementById('formOrcamento');
+  const formRecibo = document.getElementById('formRecibo');
+
+  btnOrcamento.onclick = () => {
+    formOrcamento.classList.remove('hidden');
+    formRecibo.classList.add('hidden');
+  };
+  btnRecibo.onclick = () => {
+    formRecibo.classList.remove('hidden');
+    formOrcamento.classList.add('hidden');
+  };
+
+  // Itens no orçamento
+  const addItemBtn = document.getElementById('addItem');
+  const itensContainer = document.getElementById('itensContainer');
+
+  function criaItem() {
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '10px';
+    div.style.marginTop = '8px';
+
+    const inputItem = document.createElement('input');
+    inputItem.type = 'text';
+    inputItem.placeholder = 'Item';
+    inputItem.required = true;
+    inputItem.style.flex = '3';
+
+    const inputQtd = document.createElement('input');
+    inputQtd.type = 'number';
+    inputQtd.placeholder = 'Qtd';
+    inputQtd.min = '1';
+    inputQtd.required = true;
+    inputQtd.style.flex = '1';
+
+    const inputPreco = document.createElement('input');
+    inputPreco.type = 'number';
+    inputPreco.placeholder = 'Preço Unitário (R$)';
+    inputPreco.min = '0';
+    inputPreco.step = '0.01';
+    inputPreco.required = true;
+    inputPreco.style.flex = '2';
+
+    div.appendChild(inputItem);
+    div.appendChild(inputQtd);
+    div.appendChild(inputPreco);
+
+    return div;
+  }
+
+  addItemBtn.onclick = () => {
+    itensContainer.appendChild(criaItem());
+  };
+
+  // Sempre inicia com um item
+  addItemBtn.click();
+
+  // Preview da logo da empresa
+  const empresaLogoInput = document.getElementById('empresaLogo');
+  const logoPreview = document.getElementById('logoPreview');
+  let logoDataUrl = null;
+
+  empresaLogoInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(file && (file.type === "image/png" || file.type === "image/jpeg")) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        logoDataUrl = ev.target.result;
+        logoPreview.src = logoDataUrl;
+        logoPreview.classList.remove('hidden');
+      }
+      reader.readAsDataURL(file);
+    } else {
+      logoDataUrl = null;
+      logoPreview.src = '';
+      logoPreview.classList.add('hidden');
+    }
+  });
+
+  // Função para desenhar logo no PDF (retorna promise)
+  function drawLogo(doc, x, y, maxWidth, maxHeight) {
+    return new Promise((resolve) => {
+      if (!logoDataUrl) {
+        resolve();
+        return;
+      }
+      const img = new Image();
+      img.onload = function() {
+        let width = img.width;
+        let height = img.height;
+        const ratio = width / height;
+        if (width > maxWidth) {
+          width = maxWidth;
+          height = width / ratio;
+        }
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = height * ratio;
+        }
+        doc.addImage(logoDataUrl, 'PNG', x, y, width, height);
+        resolve();
+      };
+      img.src = logoDataUrl;
+    });
+  }
+
+  // Gerar Orçamento
+  formOrcamento.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Dados empresa
+    const empresaNome = document.getElementById('empresaNome').value.trim();
+    const empresaEndereco = document.getElementById('empresaEndereco').value.trim();
+    const empresaTelefone = document.getElementById('empresaTelefone').value.trim();
+    const empresaCNPJ = document.getElementById('empresaCNPJ').value.trim();
+
+    // Dados cliente e veículo
+    const clienteNome = document.getElementById('clienteNome').value.trim();
+    const clienteTelefone = document.getElementById('clienteTelefone').value.trim();
+    const veiculoModelo = document.getElementById('veiculoModelo').value.trim();
+    const veiculoCor = document.getElementById('veiculoCor').value.trim();
+    const veiculoPlaca = document.getElementById('veiculoPlaca').value.trim();
+    const veiculoKM = document.getElementById('veiculoKM').value.trim();
+    const observacao = document.getElementById('observacaoOrcamento').value.trim();
+
+    // Itens
+    const itensDivs = itensContainer.querySelectorAll('div');
+    const itens = [];
+    let valorTotal = 0;
+    itensDivs.forEach(div => {
+      const inputs = div.querySelectorAll('input');
+      const item = inputs[0].value.trim();
+      const qtd = Number(inputs[1].value);
+      const preco = Number(inputs[2].value);
+      if (item && qtd > 0 && preco >= 0) {
+        const totalItem = qtd * preco;
+        valorTotal += totalItem;
+        itens.push({ item, qtd, preco, totalItem });
+      }
+    });
+
+    // Data e hora atual
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    // Fundo azul marinho no cabeçalho
+    doc.setFillColor(0, 33, 71);
+    doc.rect(0, 0, 210, 35, 'F');
+
+    // Desenhar logo da empresa
+    await drawLogo(doc, 10, 5, 30, 25);
+
+    // Dados empresa texto
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(empresaNome, 50, 15);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(empresaEndereco, 50, 22);
+    doc.text(`Tel: ${empresaTelefone}`, 50, 27);
+    doc.text(`CNPJ: ${empresaCNPJ}`, 50, 32);
+
+    // Título
+    doc.setTextColor(0, 33, 71);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ORÇAMENTO', 105, 50, null, null, 'center');
+
+    // Cliente e veículo
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clienteNome}`, 15, 60);
+    doc.text(`Telefone: ${clienteTelefone}`, 15, 67);
+    doc.text(`Modelo: ${veiculoModelo}`, 15, 74);
+    doc.text(`Cor: ${veiculoCor}`, 15, 81);
+    doc.text(`Placa: ${veiculoPlaca}`, 15, 88);
+    doc.text(`KM Rodados: ${veiculoKM}`, 15, 95);
+    doc.text(`Data/Hora: ${dataHora}`, 130, 95);
+
+    // Itens (sem tabela, só texto formatado)
+    let y = 105;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Item', 15, y);
+    doc.text('Qtd', 110, y);
+    doc.text('Preço Unit.', 135, y);
+    doc.text('Total', 170, y);
+    y += 6;
+    doc.setDrawColor(0, 33, 71);
+    doc.setLineWidth(0.8);
+    doc.line(15, y, 195, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    itens.forEach(({item, qtd, preco, totalItem}) => {
+      doc.text(item, 15, y);
+      doc.text(String(qtd), 110, y);
+      doc.text(`R$ ${preco.toFixed(2)}`, 135, y);
+      doc.text(`R$ ${totalItem.toFixed(2)}`, 170, y);
+      y += 8;
+    });
+
+    y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Valor Total: R$ ${valorTotal.toFixed(2)}`, 15, y);
+
+    y += 20;
+    if (observacao) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Observação:', 15, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      const splitObs = doc.splitTextToSize(observacao, 180);
+      doc.text(splitObs, 15, y);
+      y += splitObs.length * 7;
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Documento gerado em: ${dataHora}`, 105, 290, null, null, 'center');
+
+    doc.save(`orcamento_${clienteNome.replace(/\s+/g, '_')}.pdf`);
+  });
+
+  // Recibo
+
+  // Atualizar valor restante automaticamente
+  const reciboValorTotal = document.getElementById('reciboValorTotal');
+  const reciboValorEntrada = document.getElementById('reciboValorEntrada');
+  const reciboValorRestante = document.getElementById('reciboValorRestante');
+
+  function atualizaValorRestante() {
+    const total = parseFloat(reciboValorTotal.value) || 0;
+    const entrada = parseFloat(reciboValorEntrada.value) || 0;
+    let restante = total - entrada;
+    if(restante < 0) restante = 0;
+    reciboValorRestante.value = restante.toFixed(2);
+  }
+
+  reciboValorTotal.addEventListener('input', atualizaValorRestante);
+  reciboValorEntrada.addEventListener('input', atualizaValorRestante);
+
+  formRecibo.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Dados empresa
+    const empresaNome = document.getElementById('empresaNome').value.trim();
+    const empresaEndereco = document.getElementById('empresaEndereco').value.trim();
+    const empresaTelefone = document.getElementById('empresaTelefone').value.trim();
+    const empresaCNPJ = document.getElementById('empresaCNPJ').value.trim();
+
+    // Dados cliente
+    const clienteNome = document.getElementById('reciboClienteNome').value.trim();
+    const clienteTelefone = document.getElementById('reciboClienteTelefone').value.trim();
+
+    // Valores
+    const valorTotal = parseFloat(reciboValorTotal.value) || 0;
+    const valorEntrada = parseFloat(reciboValorEntrada.value) || 0;
+    const valorRestante = parseFloat(reciboValorRestante.value) || 0;
+    const pagamento = document.getElementById('formaPagamento').value;
+    const observacao = document.getElementById('observacaoRecibo').value.trim();
+
+    // Data e hora
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    // Fundo verde escuro no cabeçalho
+    doc.setFillColor(46, 204, 113); // verde claro
+    doc.rect(0, 0, 210, 35, 'F');
+
+    // Logo empresa
+    await drawLogo(doc, 10, 5, 30, 25);
+
+    // Dados empresa texto
+    doc.setTextColor(0, 40, 0);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(empresaNome, 50, 15);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(empresaEndereco, 50, 22);
+    doc.text(`Tel: ${empresaTelefone}`, 50, 27);
+    doc.text(`CNPJ: ${empresaCNPJ}`, 50, 32);
+
+    // Título
+    doc.setTextColor(0, 80, 0);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RECIBO', 105, 50, null, null, 'center');
+
+    // Dados cliente
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clienteNome}`, 15, 60);
+    doc.text(`Telefone: ${clienteTelefone}`, 15, 67);
+    doc.text(`Data/Hora: ${dataHora}`, 130, 67);
+
+    // Valores
+    let y = 80;
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Valor Total: R$ ${valorTotal.toFixed(2)}`, 15, y);
+    y += 8;
+    doc.text(`Valor Entrada: R$ ${valorEntrada.toFixed(2)}`, 15, y);
+    y += 8;
+    doc.text(`Valor Restante: R$ ${valorRestante.toFixed(2)}`, 15, y);
+
+    y += 12;
+
+    // Forma pagamento
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Forma de Pagamento: ${pagamento}`, 15, y);
+
+    y += 12;
+
+    // Observação
+    if(observacao) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Observações:', 15, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      const splitObs = doc.splitTextToSize(observacao, 180);
+      doc.text(splitObs, 15, y);
+      y += splitObs.length * 7;
+    }
+
+    y = 280;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Agradecemos a preferência!', 105, y - 10, null, null, 'center');
+    doc.text(`Documento gerado em: ${dataHora}`, 105, y, null, null, 'center');
+
+    doc.save(`recibo_${clienteNome.replace(/\s+/g, '_')}.pdf`);
+  });
+
+</script>
+
+</body>
+</html>
